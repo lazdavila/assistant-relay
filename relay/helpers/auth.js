@@ -42,6 +42,13 @@ exports.setCredentials = async function (name) {
         const key = user.secret.installed || user.secret.web;
         const oauthClient = new OAuth2Client(key.client_id, key.client_secret, key.redirect_uris[0]);
         oauthClient.setCredentials(user.tokens);
+        
+        oauthClient.on('tokens', (tokens) => {
+            // called if token was expired or due to expire
+            // update the database with the new access token and its new expiry date
+            await db.get('users').chain().find({name: name}).assign({tokens: tokens}).write();
+        });
+
         return oauthClient;
     } catch (e) {
         console.error(e)
